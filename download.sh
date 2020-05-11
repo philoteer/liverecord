@@ -1,29 +1,29 @@
 #!/bin/bash
 
 if [[ ! -n "${1}" ]]; then
-	echo "${0} none|live|video|long[fast][触发下播后立即录像的最长直播时间][full] youtube频道号码 [loop|循环次数] [15,150,60|循环检测间隔,视频列表最大长度,最短下载间隔] [3,3,3|录像最大并发数,图片最大并发数,简介最大并发数] [\"download_video/other,download_log/other.log|本地目录,视频列表文件路径\"] [nobackup|rclone:网盘名称:|baidupan[重试次数]]"
-	echo "示例：${0} livevideofastfull \"UCWCc8tO-uUl_7SJXIKJACMw\" loop 15,150,60 2,3,3 \"download_video/mea,download_log/mea.log\" rclone:vpsb:3"
-	echo "第一个参数说明(其他参数用法基本同record.sh)：live、video、long分别为从直播、视频页面(前30个视频)、上传视频列表页面(前100个视频)获取视频列表(请务必将视频列表最大长度设置为更大的值)，设置为none则不更新视频列表，适用于手动提供视频列表的情况。fast为直播下播后立即录像，有机会在删档前开始下载。触发下播后立即录像的最长直播时间设置为7200可以避免下载到未压制完成的视频。full为确保下载到完整视频，防止因下播后立即录像功能导致无法下载到压制完成的视频。"
-	echo "必要模块为curl、youtube-dl、ffmpeg"
-	echo "rclone上传基于\"https://github.com/rclone/rclone\"，百度云上传基于BaiduPCS-Go，请登录后使用。"
-	echo "注意文件路径不能带有\",\"，注意循环次数过少可能会导致下载与上传不能完成"
+	echo "${0} none|live|video|long[fast][The longest live time for recording immediately after triggering download][full] youtube Channel number [loop|Cycles] [15,150,60|Loop detection interval, maximum length of video list, shortest download interval] [3,3,3|Maximum number of concurrent videos, maximum number of concurrent images, maximum number of concurrent profiles] [\"download_video/other,download_log/other.log|Local directory, file path of video list\"] [nobackup|rclone:Network Disk Name:|baidupan[number of retries]]"
+	echo "Examples：${0} livevideofastfull \"UCWCc8tO-uUl_7SJXIKJACMw\" loop 15,150,60 2,3,3 \"download_video/mea,download_log/mea.log\" rclone:vpsb:3"
+	echo "The first parameter description (other parameters are basically the same as record.sh)：live、video、long is to get the video list from the live broadcast, video page (first 30 videos), upload video list page (first 100 videos) (be sure to set the maximum length of the video list to a larger value), set to none to not update The video list is applicable to the case of manually providing the video list. fast is a video recorded immediately after the live broadcast, and there is a chance to start downloading before deleting the file. The maximum live broadcast time of recording immediately after triggering download is set to 7200 to avoid downloading uncompressed video. full to ensure that the complete video is downloaded, to prevent the downloading of the compressed video due to the immediate recording function after downloading."
+	echo "The necessary modules are curl, youtube-dl, ffmpeg"
+	echo "rclone upload is based on\"https://github.com/rclone/rclone\"，Baidu cloud upload is based on BaiduPCS-Go, please log in to use."
+	echo "Note that the file path cannot be\",\"，Note that too few cycles may result in downloads and uploads not being completed"
 	exit 1
 fi
 
 
 
-URL_LIVE_DURATION_MAX=$(echo "${1}" | grep -o "[0-9]*") #触发下播后立即录像的最长直播时间
-PART_URL="${2}" #youtube频道号码
-LOOP_TIME="${3:-loop}" #是否循环或循环次数
-LOOPINTERVAL_LINEMAX_MINDLINTERVAL="${4:-15,150,60}" ; LOOPINTERVAL="$(echo $LOOPINTERVAL_LINEMAX_MINDLINTERVAL | awk -F"," '{print $1}')" ; LINEMAX="$(echo $LOOPINTERVAL_LINEMAX_MINDLINTERVAL | awk -F"," '{print $2}')" ; MINDLINTERVAL="$(echo $LOOPINTERVAL_LINEMAX_MINDLINTERVAL | awk -F"," '{print $3}')" #循环检测间隔,视频列表最大长度,最短视频下载间隔
-NUM_MAX="${5:-3,3,3}" #最大并发数
+URL_LIVE_DURATION_MAX=$(echo "${1}" | grep -o "[0-9]*") #The longest live time for recording immediately after triggering download
+PART_URL="${2}" #youtube channel number
+LOOP_TIME="${3:-loop}" #Whether to cycle or the number of cycles
+LOOPINTERVAL_LINEMAX_MINDLINTERVAL="${4:-15,150,60}" ; LOOPINTERVAL="$(echo $LOOPINTERVAL_LINEMAX_MINDLINTERVAL | awk -F"," '{print $1}')" ; LINEMAX="$(echo $LOOPINTERVAL_LINEMAX_MINDLINTERVAL | awk -F"," '{print $2}')" ; MINDLINTERVAL="$(echo $LOOPINTERVAL_LINEMAX_MINDLINTERVAL | awk -F"," '{print $3}')" #Loop detection interval, maximum length of video list, shortest video download interval
+NUM_MAX="${5:-3,3,3}" #Maximum concurrent
 RECORD_NUM_MAX="$(echo $NUM_MAX | awk -F"," '{print $1}')" ; THUMBNAIL_NUM_MAX="$(echo $NUM_MAX | awk -F"," '{print $2}')" ; DESCRIPTION_NUM_MAX="$(echo $NUM_MAX | awk -F"," '{print $3}')"
 [[ "${THUMBNAIL_NUM_MAX}" == "" ]] && THUMBNAIL_NUM_MAX="${RECORD_NUM_MAX}" ; [[ "${DESCRIPTION_NUM_MAX}" == "" ]] && DESCRIPTION_NUM_MAX="${RECORD_NUM_MAX}"
-LOCAL_LOG="${6:-download_video/other,download_log/other.log}" ; DIR_LOCAL="$(echo ${LOCAL_LOG} | awk -F"," '{print $1}')" ; DIR_LOG="$(echo ${LOCAL_LOG} | awk -F"," '{print $2}')" #本地目录,log文件路径
+LOCAL_LOG="${6:-download_video/other,download_log/other.log}" ; DIR_LOCAL="$(echo ${LOCAL_LOG} | awk -F"," '{print $1}')" ; DIR_LOG="$(echo ${LOCAL_LOG} | awk -F"," '{print $2}')" #Local directory, log file path
 mkdir -p "${DIR_LOCAL}" ; mkdir -p "$(echo ${DIR_LOG} | sed -n "s/\/[^\/]*$//p")" ; touch "${DIR_LOG}"
-BACKUP="${7:-nobackup}" #自动备份
-BACKUP_DISK="$(echo "${BACKUP}" | awk -F":" '{print $1}')$(echo "${BACKUP}" | awk -F":" '{print $NF}')" ; DIR_RCLONE="$(echo "${BACKUP}" | awk -F":" '{print $2}'):${DIR_LOCAL}" ; DIR_BAIDUPAN="${DIR_LOCAL}" #选择网盘与网盘路径
-RETRY_MAX=$(echo "${BACKUP}" | awk -F":" '{print $NF}' | grep -o "[0-9]*") ; [[ ! -n "${RETRY_MAX}" ]] && RETRY_MAX=1 #自动备份重试次数
+BACKUP="${7:-nobackup}" #Automatic backup
+BACKUP_DISK="$(echo "${BACKUP}" | awk -F":" '{print $1}')$(echo "${BACKUP}" | awk -F":" '{print $NF}')" ; DIR_RCLONE="$(echo "${BACKUP}" | awk -F":" '{print $2}'):${DIR_LOCAL}" ; DIR_BAIDUPAN="${DIR_LOCAL}" #Select network disk and network disk path
+RETRY_MAX=$(echo "${BACKUP}" | awk -F":" '{print $NF}' | grep -o "[0-9]*") ; [[ ! -n "${RETRY_MAX}" ]] && RETRY_MAX=1 #Automatic backup retries
 
 
 
@@ -33,13 +33,13 @@ THUMBNAIL_DLTIME=1
 DESCRIPTION_DLTIME=1
 
 while true; do
-	#添加末尾换行符，清理多余行
+	#Add a newline at the end to clean up extra lines
 	ADD_ENTER=$(tail -n 1 "${DIR_LOG}" | wc -l)
 	[[ "${ADD_ENTER}" == 0 ]] && echo >> "${DIR_LOG}" && LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") && echo -e "${LOG_PREFIX} add enter"
 	LINETOTAL=$(cat "${DIR_LOG}" | wc -l)
 	[[ "${LINEMAX}" != "" ]] && [[ ${LINETOTAL} -gt ${LINEMAX} ]] && LINEDEL=$(( ${LINETOTAL}-${LINEMAX} )) && sed -i '1,'"${LINEDEL}"'d' "${DIR_LOG}" && LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") && echo -e "${LOG_PREFIX} delete first ${LINEDEL} line"
 	
-	#添加列表，for获取LIST不能加引号，awk|while无法修改外部变量
+	#Add list, for for LIST can not be quoted, awk | while can not modify external variables
 	if (echo "${1}" | grep -q "live"); then
 		LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") ; echo "${LOG_PREFIX} metadata https://www.youtube.com/channel/${PART_URL}/live"
 		URL_ADD_LIST_LIVE_METADATA=$(wget -q -O- "https://www.youtube.com/channel/${PART_URL}/live")
@@ -78,7 +78,7 @@ while true; do
 	
 	
 	awk '{print $0}' "${DIR_LOG}" | while read LINE; do
-		#读取
+		#Read
 		URL=$(echo "${LINE}" | awk -F',' '{print $1}')
 		DATE=$(echo "${LINE}" | awk -F',' '{print $2}')
 		STATUS=$(echo "${LINE}" | awk -F',' '{print $3}')
@@ -87,7 +87,7 @@ while true; do
 		DESCRIPTION=$(echo "${LINE}" | awk -F',' '{print $6}')
 		#LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") ; echo "${LOG_PREFIX} read ${LINE}"
 		
-		#格式化
+		#format
 		[[ "${URL}" == "" ]] && continue
 		SPLIT_NUM=$(echo $LINE | awk '{print gsub(",",",",$0)}')
 		[[ "${SPLIT_NUM}" == 0 ]] && sed -i "/^${URL}$/c ${URL},,,,," "${DIR_LOG}" && LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") && echo "${LOG_PREFIX} ${LINE} fix ${URL},,,,," 
@@ -100,11 +100,11 @@ while true; do
 		
 		
 		
-		#状态
-		#live:即将直播(qualityLabel-,isLive-,videoIsLivePremiere-,lengthSeconds=0)，直播(qualityLabel+,isLive+,videoIsLivePremiere-,lengthSeconds=0)，停止直播(qualityLabel-,isLive-,videoIsLivePremiere-,lengthSeconds=0)
-		#videos:即将首播(qualityLabel-,isLive-,videoIsLivePremiere+,lengthSeconds=0)，首播(qualityLabel+,isLive+,videoIsLivePremiere+,lengthSeconds>1)，停止首播(qualityLabel+,isLive-,videoIsLivePremiere+,lengthSeconds>1)，压制(qualityLabel+,isLive-,videoIsLivePremiere-,lengthSeconds=1)，正常(qualityLabel+,isLive-,videoIsLivePremiere-,lengthSeconds>1)
-		#playlist:正常(qualityLabel+,isLive-,lengthSeconds>1)
-		#other:删除("")
+		#status
+		#live:coming soon(qualityLabel-,isLive-,videoIsLivePremiere-,lengthSeconds=0)，Live(qualityLabel+,isLive+,videoIsLivePremiere-,lengthSeconds=0)，Stop live streaming(qualityLabel-,isLive-,videoIsLivePremiere-,lengthSeconds=0)
+		#videos:Premiere soon(qualityLabel-,isLive-,videoIsLivePremiere+,lengthSeconds=0)，Premiere (qualityLabel+,isLive+,videoIsLivePremiere+,lengthSeconds>1)，Stop premiere(qualityLabel+,isLive-,videoIsLivePremiere+,lengthSeconds>1)，pressing (qualityLabel+,isLive-,videoIsLivePremiere-,lengthSeconds=1)，normal(qualityLabel+,isLive-,videoIsLivePremiere-,lengthSeconds>1)
+		#playlist:normal(qualityLabel+,isLive-,lengthSeconds>1)
+		#other:delete("")
 		if [[ "${STATUS}" == "" ]] || [[ "${STATUS}" == "直播" ]] || [[ "${STATUS}" == "首播" ]] || [[ "${STATUS}" == "压制" ]]; then
 			LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") ; echo "${LOG_PREFIX} ${LINE} metadata https://www.youtube.com/watch?v=${URL}"
 			URL_METADATA=$(wget -q -O- "https://www.youtube.com/watch?v=${URL}")
