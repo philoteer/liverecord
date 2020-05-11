@@ -1,34 +1,35 @@
 #!/bin/bash
 
 if [[ ! -n "${1}" ]]; then
-	echo "${0} youtube|youtubeffmpeg|twitcast|twitcastffmpeg|twitcastpy|twitch|openrec|nicolv[:用户名,密码]|nicoco[:用户名,密码]|nicoch[:用户名,密码]|mirrativ|reality|17live|chaturbate|bilibili|bilibiliproxy[,代理ip:代理端口]|streamlink|m3u8 \"频道号码\" [best|其他清晰度] [loop|once|视频分段时间] [10,10,1|循环检测间隔,最短录制间隔,录制开始所需连续检测开播次数] [\"record_video/other|其他本地目录\"] [nobackup|rclone:网盘名称:|onedrive|baidupan[重试次数][keep|del]] [\"noexcept|排除转播的youtube频道号码\"] [\"noexcept|排除转播的twitcast频道号码\"] [\"noexcept|排除转播的twitch频道号码\"] [\"noexcept|排除转播的openrec频道号码\"] [\"noexcept|排除转播的nicolv频道号码\"] [\"noexcept|排除转播的nicoco频道号码\"] [\"noexcept|排除转播的nicoch频道号码\"] [\"noexcept|排除转播的mirrativ频道号码\"] [\"noexcept|排除转播的reality频道号码\"] [\"noexcept|排除转播的17live频道号码\"] [\"noexcept|排除转播的chaturbate频道号码\"] [\"noexcept|排除转播的streamlink支持的频道网址\"]"
-	echo "示例：${0} bilibiliproxy,127.0.0.1:1080 \"12235923\" best,1080p60,1080p,720p,480p,360p,worst 14400 15,5,2 \"record_video/mea_bilibili\" rclone:vps:onedrivebaidupan3keep \"UCWCc8tO-uUl_7SJXIKJACMw\" \"kaguramea\" \"kagura0mea\" \"KaguraMea\" "
-	echo "必要模块为curl、streamlink、ffmpeg，可选模块为livedl、python3、you-get，请将livedl文件放置于运行时目录的livedl文件夹内、请将record_twitcast.py文件放置于运行时目录的record文件夹内。"
-	echo "rclone上传基于\"https://github.com/rclone/rclone\"，onedrive上传基于\"https://github.com/MoeClub/OneList/tree/master/OneDriveUploader\"，百度云上传基于\"https://github.com/iikira/BaiduPCS-Go\"，请登录后使用。"
-	echo "注意使用youtube直播仅支持1080p以下的清晰度，请不要使用best和1080p60及以上的参数"
-	echo "仅bilibili支持排除转播功能"
+	echo "${0} youtube|youtubeffmpeg|twitcast|twitcastffmpeg|twitcastpy|twitch|openrec|nicolv[:ID,PW]|nicoco[:ID,PW]|nicoch[:ID,PW]|mirrativ|reality|17live|chaturbate|bilibili|bilibiliproxy[,Proxy ip:Proxy Port]|streamlink|m3u8 \"Channel number\" [best|Other quality] [loop|once|Video segmentation time] [10,10,1|Loop detection interval, the shortest recording interval, the number of continuous detection starts required for recording start] [\"record_video/other|Other local directories\"] [nobackup|rclone:Network Disk Name:|onedrive|baidupan[number of retries][keep|del]] [\"noexcept|Exclude rebroadcastyoutubeChannel number\"] [\"noexcept|Exclude rebroadcasttwitcastChannel number\"] [\"noexcept|Exclude rebroadcasttwitchChannel number\"] [\"noexcept|Exclude rebroadcastopenrecChannel number\"] [\"noexcept|Exclude rebroadcastnicolvChannel number\"] [\"noexcept|Exclude rebroadcastnicocoChannel number\"] [\"noexcept|Exclude rebroadcastnicochChannel number\"] [\"noexcept|Exclude rebroadcastmirrativChannel number\"] [\"noexcept|Exclude rebroadcastrealityChannel number\"] [\"noexcept|Exclude rebroadcast17liveChannel number\"] [\"noexcept|Exclude rebroadcastchaturbateChannel number\"] [\"noexcept|Exclude rebroadcaststreamlinkSupported channel URL\"]"
+	echo "Examples：${0} bilibiliproxy,127.0.0.1:1080 \"12235923\" best,1080p60,1080p,720p,480p,360p,worst 14400 15,5,2 \"record_video/mea_bilibili\" rclone:vps:onedrivebaidupan3keep \"UCWCc8tO-uUl_7SJXIKJACMw\" \"kaguramea\" \"kagura0mea\" \"KaguraMea\" "
+	echo "The necessary modules are curl, streamlink, and ffmpeg. The optional modules are livedl, python3, and you-get. Place the livedl file in the livedl folder of the runtime directory. Place the record_twitcast.py file in the record file of the runtime directory. Inside."
+	echo "rclone upload based on\"https://github.com/rclone/rclone\"，onedrive upload based\"https://github.com/MoeClub/OneList/tree/master/OneDriveUploader\"，Baidu Cloud Upload is based on\"https://github.com/iikira/BaiduPCS-Go\"，please log in to use."
+	echo "Note that using youtube live broadcast only supports resolutions below 1080p, please do not use best and 1080p60 and above parameters"
+	echo "Only bilibili supports the exclude broadcast function"
 	exit 1
 fi
 if [[ "${1}" == "twitcast" || "${1}" == "nicolv"* || "${1}" == "nicoco"* || "${1}" == "nicoch"* ]]; then
-	[[ ! -f "livedl/livedl" ]] && echo "需要livedl，请将livedl文件放置于运行时目录的livedl文件夹内"
+	[[ ! -f "livedl/livedl" ]] && echo "Need livedl, please place the livedl file in the livedl folder of the runtime directory"
 fi
 if [[ "${1}" == "twitcastpy" ]]; then
-	[[ ! -f "record/record_twitcast.py" ]] && echo "需要record_twitcast.py，请将record_twitcast.py文件放置于运行时目录的record文件夹内"
+	[[ ! -f "record/record_twitcast.py" ]] && echo "Record_twitcast.py is required, please place the record_twitcast.py file in the record folder of the runtime directory"
+
 fi
 
 
 
 NICO_ID_PSW=$(echo "${1}" | awk -F":" '{print $2}')
 STREAM_PROXY_HARD=$(echo "${1}" | awk -F"," '{print $2}')
-PART_URL="${2}" #频道号码
-FORMAT="${3:-best}" #清晰度
-LOOP_TIME="${4:-loop}" #是否循环或视频分段时间
-LOOPINTERVAL_ENDINTERVAL_LIVESTATUSMIN="${5:-10,10,1}" ; LOOPINTERVAL=$(echo "${LOOPINTERVAL_ENDINTERVAL_LIVESTATUSMIN}" | awk -F"," '{print $1}'); ENDINTERVAL=$(echo "${LOOPINTERVAL_ENDINTERVAL_LIVESTATUSMIN}" | awk -F"," '{print $2}'); [[ "${ENDINTERVAL}" == "" ]] && ENDINTERVAL=${LOOPINTERVAL} ; LIVESTATUSMIN=$(echo "${LOOPINTERVAL_ENDINTERVAL_LIVESTATUSMIN}" | awk -F"," '{print $3}') ; [[ "${LIVESTATUSMIN}" == "" ]] && LIVESTATUSMIN=1 #循环检测间隔,最短录制间隔,录制开始所需连续检测开播次数
-DIR_LOCAL="${6:-record_video/other}" ; mkdir -p "${DIR_LOCAL}" #本地目录
-BACKUP="${7:-nobackup}" #自动备份
-BACKUP_DISK="$(echo "${BACKUP}" | awk -F":" '{print $1}')$(echo "${BACKUP}" | awk -F":" '{print $NF}')" ; DIR_RCLONE="$(echo "${BACKUP}" | awk -F":" '{print $2}'):${DIR_LOCAL}" ; DIR_ONEDRIVE="${DIR_LOCAL}" ; DIR_BAIDUPAN="${DIR_LOCAL}" #选择网盘与网盘路径
-BACKUP_RETRY_MAX=$(echo "${BACKUP}" | awk -F":" '{print $NF}' | grep -o "[0-9]*") ; [[ ! -n "${BACKUP_RETRY_MAX}" ]] && BACKUP_RETRY_MAX=1 #自动备份重试次数
-EXCEPT_YOUTUBE_PART_URL="${8:-noexcept}" #排除转播的频道号码
+PART_URL="${2}" #Channel number
+FORMAT="${3:-best}" #Sharpness
+LOOP_TIME="${4:-loop}" #Whether to loop or segment video time
+LOOPINTERVAL_ENDINTERVAL_LIVESTATUSMIN="${5:-10,10,1}" ; LOOPINTERVAL=$(echo "${LOOPINTERVAL_ENDINTERVAL_LIVESTATUSMIN}" | awk -F"," '{print $1}'); ENDINTERVAL=$(echo "${LOOPINTERVAL_ENDINTERVAL_LIVESTATUSMIN}" | awk -F"," '{print $2}'); [[ "${ENDINTERVAL}" == "" ]] && ENDINTERVAL=${LOOPINTERVAL} ; LIVESTATUSMIN=$(echo "${LOOPINTERVAL_ENDINTERVAL_LIVESTATUSMIN}" | awk -F"," '{print $3}') ; [[ "${LIVESTATUSMIN}" == "" ]] && LIVESTATUSMIN=1 #Loop detection interval, the shortest recording interval, the number of continuous detection starts required for recording start
+DIR_LOCAL="${6:-record_video/other}" ; mkdir -p "${DIR_LOCAL}" #Local directory
+BACKUP="${7:-nobackup}" #Automatic backup
+BACKUP_DISK="$(echo "${BACKUP}" | awk -F":" '{print $1}')$(echo "${BACKUP}" | awk -F":" '{print $NF}')" ; DIR_RCLONE="$(echo "${BACKUP}" | awk -F":" '{print $2}'):${DIR_LOCAL}" ; DIR_ONEDRIVE="${DIR_LOCAL}" ; DIR_BAIDUPAN="${DIR_LOCAL}" #Select network disk and network disk path
+BACKUP_RETRY_MAX=$(echo "${BACKUP}" | awk -F":" '{print $NF}' | grep -o "[0-9]*") ; [[ ! -n "${BACKUP_RETRY_MAX}" ]] && BACKUP_RETRY_MAX=1 #Automatic backup retries
+EXCEPT_YOUTUBE_PART_URL="${8:-noexcept}" #Exclude retransmitted channel number
 EXCEPT_TWITCAST_PART_URL="${9:-noexcept}"
 EXCEPT_TWITCH_PART_URL="${10:-noexcept}"
 EXCEPT_OPENREC_PART_URL="${11:-noexcept}"
@@ -80,7 +81,7 @@ while true; do
 			LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") ; echo "${LOG_PREFIX} metadata islive_youtube=${ISLIVE_YOUTUBE}"
 			if [[ ${ISLIVE_YOUTUBE} -gt 0 ]]; then
 				if (wget -q -O- "${FULL_URL}" | grep "ytplayer" | grep -q '\\"isLive\\":true'); then
-					let LIVE_STATUS++ ; ISLIVE_YOUTUBE=3 #qualityLabel开播早下播晚会在下播时多录，isLive开播晚下播早会在开播时晚录
+					let LIVE_STATUS++ ; ISLIVE_YOUTUBE=3 #qualityLabel starts to broadcast early and the evening will be recorded at the time of the broadcast, isLive starts to broadcast the evening and will be recorded at the beginning of the broadcast
 				else
 					LIVE_STATUS=0 ; let ISLIVE_YOUTUBE--
 				fi
@@ -218,7 +219,7 @@ while true; do
 		fi
 		
 		LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") ; echo "${LOG_PREFIX} metadata livestatus=${LIVE_STATUS}"
-		[[ ! ${LIVE_STATUS} -lt ${LIVESTATUSMIN} ]] && break #连续检测到直播才进行录制
+		[[ ! ${LIVE_STATUS} -lt ${LIVESTATUSMIN} ]] && break #Continuous recording is detected before recording
 		sleep ${LOOPINTERVAL}
 	done
 	
@@ -247,7 +248,7 @@ while true; do
 			LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") ; echo "${LOG_PREFIX} proxy ${STREAM_PROXY}"
 		else
 			STREAM_PROXY=$(curl -s "http://http.tiqu.alicdns.com/getip3?num=1&type=1&pro=&city=0&yys=0&port=1&time=2&ts=0&ys=0&cs=0&lb=4&sb=0&pb=4&mr=1&regions=&gm=4")
-			#STREAM_PROXY=$(curl -s "http://ip.11jsq.com/index.php/api/entry?method=proxyServer.generate_api_url&packid=0&fa=0&fetch_key=&groupid=0&qty=1&time=3&pro=&city=&port=1&format=txt&ss=3&css=&dt=1&specialTxt=3&specialJson=&usertype=14") #可替换为任意代理获取方法
+			#STREAM_PROXY=$(curl -s "http://ip.11jsq.com/index.php/api/entry?method=proxyServer.generate_api_url&packid=0&fa=0&fetch_key=&groupid=0&qty=1&time=3&pro=&city=&port=1&format=txt&ss=3&css=&dt=1&specialTxt=3&specialJson=&usertype=14") #可替换为任意Proxy 获取方法
 			LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") ; echo "${LOG_PREFIX} proxy renew ${STREAM_PROXY}"
 		fi
 	fi
@@ -292,9 +293,9 @@ while true; do
 		(ffmpeg -user_agent "Mozilla/5.0" -i "${STREAM_URL}" -codec copy -f mpegts "${DIR_LOCAL}/${FNAME}" > "${DIR_LOCAL}/${FNAME}.log" 2>&1) &
 	fi
 	
-	RECORD_PID=$! #录制进程PID
-	RECORD_STOPTIME=$(( $(date +%s)+${LOOP_TIME} )) #录制结束时间戳
-	RECORD_ENDTIME=$(( $(date +%s)+${ENDINTERVAL} )) #录制循环结束的最早时间
+	RECORD_PID=$! #PID of recording process
+	RECORD_STOPTIME=$(( $(date +%s)+${LOOP_TIME} )) #Recording end timestamp
+	RECORD_ENDTIME=$(( $(date +%s)+${ENDINTERVAL} )) #The earliest time when the recording cycle ends
 	LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") ; echo "${LOG_PREFIX} record start pid=${RECORD_PID} looptime=${LOOP_TIME} url=${STREAM_URL}" #开始录制
 	while true; do
 		sleep 15
@@ -303,7 +304,7 @@ while true; do
 			LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") ; echo "${LOG_PREFIX} record already stopped"
 			break
 		else
-			if [[ "${LOOP_TIME}" != "once" ]] && [[ "${LOOP_TIME}" != "loop" ]] && [[ $(date +%s) -gt ${RECORD_STOPTIME} ]]; then #录制时间到达则终止录制
+			if [[ "${LOOP_TIME}" != "once" ]] && [[ "${LOOP_TIME}" != "loop" ]] && [[ $(date +%s) -gt ${RECORD_STOPTIME} ]]; then #Terminate recording when recording time is up
 				LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") ; echo "${LOG_PREFIX} time up kill record process ${RECORD_PID}"
 				kill ${RECORD_PID}
 				break
@@ -419,7 +420,7 @@ while true; do
 			(echo "${BAIDUPAN_FILE_ERRFLAG}" | grep -q "成功") || (LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") ; echo "${LOG_PREFIX} upload baidupan ${DIR_LOCAL}/${FNAME}.log fail" ; echo "${LOG_PREFIX} upload baidupan ${DIR_LOCAL}/${FNAME}.log fail" > "${DIR_LOCAL}/${FNAME}.log.baidupanfail.log" ; echo "${BAIDUPAN_LOG_ERRFLAG}" >> "${DIR_LOCAL}/${FNAME}.log.baidupanfail.log")
 		fi
 		
-		LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") #清除文件
+		LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") #Clear file
 		[[ "${BACKUP}" == *"keep" ]] && (echo "${LOG_PREFIX} force keep ${DIR_LOCAL}/${FNAME}" ; echo "${LOG_PREFIX} force keep ${DIR_LOCAL}/${FNAME}.log")
 		[[ "${BACKUP}" == *"del" ]] && (echo "${LOG_PREFIX} force delete ${DIR_LOCAL}/${FNAME}" ; rm -f "${DIR_LOCAL}/${FNAME}" ; echo "${LOG_PREFIX} force delete ${DIR_LOCAL}/${FNAME}.log" ; rm -f "${DIR_LOCAL}/${FNAME}.log")
 		[[ "${BACKUP}" == "rclone" || "${BACKUP}" == "onedrive" || "${BACKUP}" == "baidupan" || "${BACKUP}" == *[0-9] ]] && [[ "${RCLONE_FILE_ERRFLAG}" == "" ]] && [[ "${ONEDRIVE_FILE_ERRFLAG}" == 0 ]] && (echo "${BAIDUPAN_FILE_ERRFLAG}" | grep -q "成功") && (echo "${LOG_PREFIX} remove ${DIR_LOCAL}/${FNAME}" ; rm -f "${DIR_LOCAL}/${FNAME}")
@@ -432,7 +433,7 @@ while true; do
 	[[ "${LOOP_TIME}" == "once" ]] && break
 	
 	if [[ $(date +%s) -lt ${RECORD_ENDTIME} ]]; then
-		RECORD_ENDREMAIN=$(( ${RECORD_ENDTIME}-$(date +%s) )) ; [[ RECORD_ENDREMAIN -lt 0 ]] && RECORD_ENDREMAIN=0 #距离应有的最早结束时间的剩余时间
+		RECORD_ENDREMAIN=$(( ${RECORD_ENDTIME}-$(date +%s) )) ; [[ RECORD_ENDREMAIN -lt 0 ]] && RECORD_ENDREMAIN=0 #Remaining time from the earliest end time due
 		LOG_PREFIX=$(date +"[%Y-%m-%d %H:%M:%S]") ; echo "${LOG_PREFIX} record end retry after ${RECORD_ENDREMAIN} seconds..."
 		sleep ${RECORD_ENDREMAIN}
 	fi
